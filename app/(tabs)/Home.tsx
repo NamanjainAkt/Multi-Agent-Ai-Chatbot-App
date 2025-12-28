@@ -58,8 +58,8 @@ export default function Home() {
                     },
                     headerLeft: () => (
                         <View style={{ paddingTop: statusBarHeight }}>
-                            <TouchableOpacity className="flex-row items-center gap-2 p-2 bg-purple-700/10 rounded-xl border border-purple-500/30 ml-2">
-                                <Gem size={20} color="#ffffff" />
+                            <TouchableOpacity className="flex-row items-center gap-2 p-2 bg-neutral-700/10 rounded-xl border border-neutral-500/30 ml-2">
+                                <Gem size={20} color="#eab308" />
                                 <Text className="text-sm font-bold text-yellow-500">
                                     Pro
                                 </Text>
@@ -68,7 +68,7 @@ export default function Home() {
                     ),
                     headerRight: () => (
                         <View style={{ paddingTop: statusBarHeight }}>
-                            <TouchableOpacity className="p-2 bg-purple-500/10 rounded-xl mr-2">
+                            <TouchableOpacity className="p-2 bg-neutral-700/10 border border-neutral-500/30 rounded-xl mr-2">
                                 <Settings size={24} color="#ffffff" />
                             </TouchableOpacity>
                         </View>

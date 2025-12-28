@@ -4,15 +4,15 @@ import { getFirestore } from "firebase/firestore";
 // Note: Firebase Analytics is not supported in React Native
 // Use @react-native-firebase/analytics for React Native instead
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration from environment variables
 const firebaseConfig = {
-    apiKey: "AIzaSyBXetWQFeoX3bFx9iHx1FH_l3i8XZ_FG54",
-    authDomain: "xoxo-1f865.firebaseapp.com",
-    projectId: "xoxo-1f865",
-    storageBucket: "xoxo-1f865.firebasestorage.app",
-    messagingSenderId: "142933296160",
-    appId: "1:142933296160:web:ea111c05baf3464e03a845",
-    measurementId: "G-HJR682QMZ7"
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

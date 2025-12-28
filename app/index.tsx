@@ -3,9 +3,10 @@ import { Text } from '@/components/ui/text';
 import { useRouter } from 'expo-router';
 import { MessageCircle, Bot, Sparkles, Zap, Shield, Rocket } from 'lucide-react-native';
 import * as React from 'react';
-import { View, Platform } from 'react-native';
+import { View, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -395,7 +396,7 @@ export default function Screen() {
           </View>
 
           <Animated.View entering={FadeIn.delay(200)}>
-            <Text className="text-5xl font-black text-purple-600 dark:text-purple-400 mb-2 text-center">
+            <Text className="text-5xl font-black text-white mb-2 text-center">
               XOXO
             </Text>
           </Animated.View>
@@ -445,36 +446,83 @@ export default function Screen() {
           className="w-full max-w-sm"
         >
           {!isSignedIn && (
-            <Button
+            <TouchableOpacity
               onPress={onLoginPress}
               disabled={isAuthLoading || !isLoaded}
-              className="w-full h-14 rounded-2xl bg-purple-600 dark:bg-purple-500 shadow-xl disabled:opacity-50 mb-3"
+              activeOpacity={0.8}
+              className="overflow-hidden rounded-2xl mb-3"
+              style={{
+                shadowColor: '#06b6d4',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 8,
+                opacity: (isAuthLoading || !isLoaded) ? 0.5 : 1,
+              }}
             >
-              <View className="flex-row items-center gap-2">
-                {isAuthLoading ? (
-                  <>
+              <LinearGradient
+                colors={['#06b6d4', '#8b5cf6', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="px-8 py-4 rounded-2xl"
+              >
+                {/* Glassmorphism Overlay */}
+                <View
+                  className="absolute inset-0 rounded-2xl"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  }}
+                />
+
+                {/* Button Content */}
+                <View className="flex-row items-center justify-center gap-2">
+                  {isAuthLoading ? (
                     <Text className="text-lg font-bold text-white">Loading...</Text>
-                  </>
-                ) : (
-                  <>
-                    <Text className="text-lg font-bold text-white">Get Started</Text>
-                    <Rocket size={20} color="#ffffff" />
-                  </>
-                )}
-              </View>
-            </Button>
+                  ) : (
+                    <>
+                      <Text className="text-lg font-bold text-white">Get Started</Text>
+                      <Rocket size={20} color="#ffffff" />
+                    </>
+                  )}
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
           )}
 
           {/* TESTING BYPASS BUTTON - Remove in production */}
-          <Button
+          <TouchableOpacity
             onPress={() => router.replace('/(tabs)/Home')}
-            className="w-full h-14 rounded-2xl bg-orange-600 dark:bg-orange-500 shadow-xl"
+            activeOpacity={0.8}
+            className="overflow-hidden rounded-2xl"
+            style={{
+              shadowColor: '#f97316',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 8,
+            }}
           >
-            <View className="flex-row items-center gap-2">
-              <Text className="text-lg font-bold text-white">Skip to Home (Testing)</Text>
-              <Rocket size={20} color="#ffffff" />
-            </View>
-          </Button>
+            <LinearGradient
+              colors={['#f97316', '#fb923c']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="px-8 py-4 rounded-2xl"
+            >
+              {/* Glassmorphism Overlay */}
+              <View
+                className="absolute inset-0 rounded-2xl"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }}
+              />
+
+              {/* Button Content */}
+              <View className="flex-row items-center justify-center gap-2">
+                <Text className="text-lg font-bold text-white">Skip to Home (Testing)</Text>
+                <Rocket size={20} color="#ffffff" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
 
           <Animated.View entering={FadeIn.delay(1400)}>
             <Text className="text-center text-xs text-muted-foreground mt-4 px-4">

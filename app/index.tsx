@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { MessageCircle, Bot, Sparkles, Zap, Shield, Rocket } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
@@ -20,12 +19,31 @@ import Animated, {
   FadeInUp,
   FadeIn,
 } from 'react-native-reanimated';
+import * as WebBrowser from 'expo-web-browser'
+import { useAuth, useUser } from '@clerk/clerk-expo'
+import * as AuthSession from 'expo-auth-session'
+import { useSSO } from '@clerk/clerk-expo'
+import { useCallback } from 'react';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { fireStoreDB } from '@/config/Firebase';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+// Warm up browser for OAuth (Android only)
+const useWarmUpBrowser = () => {
+  React.useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+};
+
+WebBrowser.maybeCompleteAuthSession();
+
 // Siri-like Animated Orb Component
 const AnimatedOrb = () => {
-  const { colorScheme } = useColorScheme();
 
   // Multiple wave animations for Siri-like effect
   const wave1 = useSharedValue(0);
@@ -139,31 +157,31 @@ const AnimatedOrb = () => {
     opacity: opacity2.value * 0.7,
   }));
 
-  const isDark = colorScheme === 'dark';
+
 
   return (
     <View style={{ width: 160, height: 160, justifyContent: 'center', alignItems: 'center' }}>
       <Svg width="160" height="160" viewBox="0 0 160 160">
         <Defs>
           <RadialGradient id="siriGrad1" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={isDark ? '#a78bfa' : '#9333ea'} stopOpacity="1" />
-            <Stop offset="100%" stopColor={isDark ? '#6d28d9' : '#5b21b6'} stopOpacity="0.4" />
+            <Stop offset="0%" stopColor='#a78bfa' stopOpacity="1" />
+            <Stop offset="100%" stopColor='#6d28d9' stopOpacity="0.4" />
           </RadialGradient>
           <RadialGradient id="siriGrad2" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={isDark ? '#ec4899' : '#db2777'} stopOpacity="1" />
-            <Stop offset="100%" stopColor={isDark ? '#a855f7' : '#9333ea'} stopOpacity="0.3" />
+            <Stop offset="0%" stopColor='#ec4899' stopOpacity="1" />
+            <Stop offset="100%" stopColor='#a855f7' stopOpacity="0.3" />
           </RadialGradient>
           <RadialGradient id="siriGrad3" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={isDark ? '#3b82f6' : '#2563eb'} stopOpacity="1" />
-            <Stop offset="100%" stopColor={isDark ? '#8b5cf6' : '#7c3aed'} stopOpacity="0.3" />
+            <Stop offset="0%" stopColor='#3b82f6' stopOpacity="1" />
+            <Stop offset="100%" stopColor='#8b5cf6' stopOpacity="0.3" />
           </RadialGradient>
           <RadialGradient id="siriGrad4" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={isDark ? '#f472b6' : '#ec4899'} stopOpacity="1" />
-            <Stop offset="100%" stopColor={isDark ? '#c084fc' : '#a855f7'} stopOpacity="0.2" />
+            <Stop offset="0%" stopColor='#f472b6' stopOpacity="1" />
+            <Stop offset="100%" stopColor='#c084fc' stopOpacity="0.2" />
           </RadialGradient>
           <RadialGradient id="siriGrad5" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={isDark ? '#60a5fa' : '#3b82f6'} stopOpacity="1" />
-            <Stop offset="100%" stopColor={isDark ? '#a78bfa' : '#8b5cf6'} stopOpacity="0.2" />
+            <Stop offset="0%" stopColor='#60a5fa' stopOpacity="1" />
+            <Stop offset="100%" stopColor='#a78bfa' stopOpacity="0.2" />
           </RadialGradient>
         </Defs>
 
@@ -213,7 +231,6 @@ const FeatureCard = ({
   delay?: number;
 }) => {
   const scale = useSharedValue(1);
-  const { colorScheme } = useColorScheme();
 
   React.useEffect(() => {
     scale.value = withRepeat(
@@ -230,7 +247,7 @@ const FeatureCard = ({
     transform: [{ scale: scale.value }],
   }));
 
-  const iconColor = colorScheme === 'dark' ? '#ffffff' : '#9333ea';
+
 
   return (
     <Animated.View
@@ -241,7 +258,7 @@ const FeatureCard = ({
         style={[animatedStyle]}
         className="bg-purple-500/10 dark:bg-purple-400/10 p-4 rounded-2xl mb-2 shadow-lg border border-purple-500/20 dark:border-purple-400/20"
       >
-        <Icon size={24} color={iconColor} />
+        <Icon size={24} color='#ffffff' />
       </Animated.View>
       <Text className="text-center text-xs font-semibold text-foreground" numberOfLines={2}>
         {title}
@@ -251,9 +268,77 @@ const FeatureCard = ({
 };
 
 export default function Screen() {
-  const { colorScheme } = useColorScheme();
   const logoScale = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
+  const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
+  const { user } = useUser();
+  const { startSSOFlow } = useSSO();
+  const [isAuthLoading, setIsAuthLoading] = React.useState(false);
+
+  // Warm up browser for OAuth
+  useWarmUpBrowser();
+
+  // Handle Google OAuth sign-in
+  const onLoginPress = useCallback(async () => {
+    setIsAuthLoading(true);
+    try {
+      const { createdSessionId, setActive, signUp } = await startSSOFlow({
+        strategy: 'oauth_google',
+        redirectUrl: AuthSession.makeRedirectUri(),
+      });
+
+      if (createdSessionId) {
+        setActive!({
+          session: createdSessionId,
+          navigate: async ({ session }) => {
+            if (session?.currentTask) {
+              // Log session tasks (e.g., MFA requirements) for future handling
+              console.log('Session task required:', session?.currentTask);
+              // TODO: Create /sign-in/tasks route if you need to handle MFA or other session tasks
+            }
+            // TODO: Create a home route (e.g., app/(tabs)/home.tsx) and redirect there
+            // For now, user will stay on this page after sign-in
+            console.log('User signed in successfully:', user?.emailAddresses[0]?.emailAddress);
+          },
+        });
+      }
+
+      // Create user document in Firestore for new sign-ups
+      if (signUp && user) {
+        const userId = user.id;
+        const email = user.emailAddresses[0]?.emailAddress;
+        const firstName = user.firstName || '';
+        const lastName = user.lastName || '';
+
+        if (userId && email) {
+          await setDoc(doc(fireStoreDB, 'users', userId), {
+            email: email,
+            name: `${firstName} ${lastName}`.trim() || email,
+            joinDate: Date.now(),
+            credits: 50,
+
+          });
+          console.log('User document created in Firestore');
+        }
+      }
+    } catch (err) {
+      console.error(JSON.stringify(err, null, 2));
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }, [startSSOFlow, router, user]);
+
+
+  // BYPASSED FOR TESTING - Uncomment to re-enable authentication
+  // React.useEffect(() => {
+  //   if (isSignedIn && isLoaded) {
+  //     router.replace('/(tabs)/Home');
+  //   }
+  // }, [isSignedIn, isLoaded, router]);
+
+
+
 
   React.useEffect(() => {
     logoScale.value = withSpring(1, {
@@ -359,23 +444,48 @@ export default function Screen() {
           entering={FadeInUp.delay(1300).springify()}
           className="w-full max-w-sm"
         >
-          <Link href="/" asChild>
-            <Button className="w-full h-14 rounded-2xl bg-purple-600 dark:bg-purple-500 shadow-xl">
+          {!isSignedIn && (
+            <Button
+              onPress={onLoginPress}
+              disabled={isAuthLoading || !isLoaded}
+              className="w-full h-14 rounded-2xl bg-purple-600 dark:bg-purple-500 shadow-xl disabled:opacity-50 mb-3"
+            >
               <View className="flex-row items-center gap-2">
-                <Text className="text-lg font-bold text-white">Get Started</Text>
-                <Rocket size={20} color="#ffffff" />
+                {isAuthLoading ? (
+                  <>
+                    <Text className="text-lg font-bold text-white">Loading...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-lg font-bold text-white">Get Started</Text>
+                    <Rocket size={20} color="#ffffff" />
+                  </>
+                )}
               </View>
             </Button>
-          </Link>
+          )}
+
+          {/* TESTING BYPASS BUTTON - Remove in production */}
+          <Button
+            onPress={() => router.replace('/(tabs)/Home')}
+            className="w-full h-14 rounded-2xl bg-orange-600 dark:bg-orange-500 shadow-xl"
+          >
+            <View className="flex-row items-center gap-2">
+              <Text className="text-lg font-bold text-white">Skip to Home (Testing)</Text>
+              <Rocket size={20} color="#ffffff" />
+            </View>
+          </Button>
 
           <Animated.View entering={FadeIn.delay(1400)}>
             <Text className="text-center text-xs text-muted-foreground mt-4 px-4">
-              Join thousands of users already experiencing the future of AI
+              {isSignedIn
+                ? `Welcome back, ${user?.firstName || 'User'}!`
+                : 'Join thousands of users already experiencing the future of AI'
+              }
             </Text>
           </Animated.View>
         </Animated.View>
       </View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
-
